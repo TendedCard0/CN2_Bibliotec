@@ -31,6 +31,10 @@ app.register_blueprint(home_bp)
 from app.routes.prestamos import prestamos_bp
 app.register_blueprint(prestamos_bp)
 
+# Registrar Blueprint de Lectores
+from app.routes.lectores import lectores_bp
+app.register_blueprint(lectores_bp)
+
 # Importar modelos y crear tablas
 with app.app_context():
     try:
