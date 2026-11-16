@@ -1,0 +1,28 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-dark">Gestionar Préstamos</h1>
+            <p class="text-secondary">Administración de préstamos de libros de BiblioTech.</p>
+        </div>
+        <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+            Volver al inicio
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <h4 class="text-dark">Módulo de Préstamos</h4>
+            <p class="text-secondary mb-0">
+                Aquí podrás registrar, consultar, editar y eliminar préstamos.
+            </p>
+            <p class="text-muted mt-2 mb-0">
+                La funcionalidad de gestión se integrará en los siguientes pasos.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
