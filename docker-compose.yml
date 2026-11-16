@@ -1,0 +1,20 @@
+services:
+  web_biblioteca:
+    image: tendedcard/cn2-bibliotec:${TAG:-latest}
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:admin1234@stack_eduardo_db:5432/db_biblioteca
+    ports:
+      - "5001:5000"
+    networks:
+      - stack_eduardo_red_eduardo
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+networks:
+  stack_eduardo_red_eduardo:
+    external: true
