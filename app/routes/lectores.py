@@ -41,13 +41,29 @@ def crear():
 @lectores_bp.route('/editar/<int:id>', methods=['POST'])
 def editar(id):
     lector = Lector.query.get_or_404(id)
-    lector.nombre = request.form.get('nombre', lector.nombre).strip()
-    lector.email = request.form.get('email', lector.email).strip()
-    lector.telefono = request.form.get('telefono', '').strip()
-    lector.activo = 'activo' in request.form
+    nombre = request.form.get('nombre', lector.nombre).strip()
+    email = request.form.get('email', lector.email).strip()
+    telefono = request.form.get('telefono', '').strip()
+    activo = 'activo' in request.form
 
-    db.session.commit()
-    return redirect(url_for('lectores.index', msg='Lector actualizado correctamente.', tipo='success'))
+    if not nombre or not email:
+        return redirect(url_for('lectores.index', msg='El nombre y correo son obligatorios.', tipo='danger'))
+
+    # Verificar que el correo no esté usado por otro lector
+    lector_existente = Lector.query.filter(Lector.email == email, Lector.id != id).first()
+    if lector_existente:
+        return redirect(url_for('lectores.index', msg='Ese correo ya está registrado por otro lector.', tipo='warning'))
+
+    try:
+        lector.nombre = nombre
+        lector.email = email
+        lector.telefono = telefono
+        lector.activo = activo
+        db.session.commit()
+        return redirect(url_for('lectores.index', msg='Lector actualizado correctamente.', tipo='success'))
+    except Exception:
+        db.session.rollback()
+        return redirect(url_for('lectores.index', msg='Error al actualizar los datos del lector.', tipo='danger'))
 
 @lectores_bp.route('/eliminar/<int:id>', methods=['POST'])
 def eliminar(id):

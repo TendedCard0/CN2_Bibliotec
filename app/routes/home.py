@@ -1,12 +1,19 @@
 from flask import Blueprint, render_template
 
-# Intentamos importar los modelos de forma segura por si aún no existen en esta fase
 try:
-  from app.models.libro import Libro
-  from app.models.lector import Lector
-  from app.models.prestamo import Prestamo
+    from app.models.libro import Libro
 except ImportError:
-  Libro = Lector = Prestamo = None
+    Libro = None
+
+try:
+    from app.models.lector import Lector
+except ImportError:
+    Lector = None
+
+try:
+    from app.models.prestamo import Prestamo
+except ImportError:
+    Prestamo = None
 
 home_bp = Blueprint("home", __name__)
 

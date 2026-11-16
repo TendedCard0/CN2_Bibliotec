@@ -35,10 +35,20 @@ app.register_blueprint(prestamos_bp)
 from app.routes.lectores import lectores_bp
 app.register_blueprint(lectores_bp)
 
-# Importar modelos y crear tablas
+# Importar modelos de forma independiente y crear tablas
 with app.app_context():
     try:
-        from app.models import libro, lector, prestamo
+        from app.models import libro
+    except ImportError:
+        pass
+
+    try:
+        from app.models import lector
+    except ImportError:
+        pass
+
+    try:
+        from app.models import prestamo
     except ImportError:
         pass
 
