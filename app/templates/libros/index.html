@@ -30,7 +30,7 @@
             <label class="form-label fw-semibold">Título *</label>
             <input type="text" name="titulo" class="form-control" placeholder="Ej. Pedro Páramo" required>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label fw-semibold">Autor *</label>
             <input type="text" name="autor" class="form-control" placeholder="Ej. Juan Rulfo" required>
         </div>
@@ -41,6 +41,10 @@
         <div class="col-md-2">
             <label class="form-label fw-semibold">Editorial</label>
             <input type="text" name="editorial" class="form-control" placeholder="RM / FCE">
+        </div>
+        <div class="col-md-1">
+            <label class="form-label fw-semibold">Año</label>
+            <input type="number" name="anio_publicacion" class="form-control" placeholder="1955" min="1000" max="2100">
         </div>
         <div class="col-md-1">
             <label class="form-label fw-semibold">Disp.</label>
@@ -61,6 +65,7 @@
                     <th>Autor</th>
                     <th>ISBN</th>
                     <th>Editorial</th>
+                    <th>Año</th>
                     <th class="text-center">Disponibles</th>
                     <th class="text-end">Acciones</th>
                 </tr>
@@ -73,6 +78,7 @@
                     <td>{{ libro.autor }}</td>
                     <td><code>{{ libro.isbn }}</code></td>
                     <td>{{ libro.editorial or '-' }}</td>
+                    <td>{{ libro.anio_publicacion or '-' }}</td>
                     <td class="text-center">
                         <span class="badge bg-primary">{{ libro.disponibles }}</span>
                     </td>
@@ -114,6 +120,10 @@
                                     <input type="text" name="editorial" class="form-control" value="{{ libro.editorial or '' }}">
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label">Año de Publicación</label>
+                                    <input type="number" name="anio_publicacion" class="form-control" value="{{ libro.anio_publicacion or '' }}" min="1000" max="2100">
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">Ejemplares Disponibles *</label>
                                     <input type="number" name="disponibles" class="form-control" value="{{ libro.disponibles }}" min="0" required>
                                 </div>
@@ -127,7 +137,7 @@
                 </div>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
+                    <td colspan="8" class="text-center text-muted py-4">
                         No hay libros registrados. Utiliza el formulario superior para agregar el primero.
                     </td>
                 </tr>

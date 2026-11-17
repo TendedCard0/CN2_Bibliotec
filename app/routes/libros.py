@@ -15,8 +15,8 @@ def crear():
     autor = request.form.get('autor', '').strip()
     isbn = request.form.get('isbn', '').strip()
     editorial = request.form.get('editorial', '').strip()
-    anio = request.form.get('anio_publicacion')
-    disponibles = request.form.get('disponibles', 1)
+    anio = request.form.get('anio_publicacion', '').strip()
+    disponibles = int(request.form.get('disponibles') or 1)
 
     existente = Libro.query.filter_by(isbn=isbn).first()
     if existente:
@@ -29,7 +29,7 @@ def crear():
         isbn=isbn,
         editorial=editorial,
         anio_publicacion=int(anio) if anio else None,
-        disponibles=int(disponibles)
+        disponibles=disponibles
     )
     db.session.add(nuevo_libro)
     db.session.commit()
@@ -50,9 +50,9 @@ def editar(id):
     libro.autor = request.form.get('autor', '').strip()
     libro.isbn = nuevo_isbn
     libro.editorial = request.form.get('editorial', '').strip()
-    anio = request.form.get('anio_publicacion')
+    anio = request.form.get('anio_publicacion', '').strip()
     libro.anio_publicacion = int(anio) if anio else None
-    libro.disponibles = int(request.form.get('disponibles', 1))
+    libro.disponibles = int(request.form.get('disponibles') or 1)
 
     db.session.commit()
     flash('Libro actualizado correctamente.', 'info')
