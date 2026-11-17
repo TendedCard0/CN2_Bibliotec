@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Encabezado idéntico al módulo de Préstamos -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold text-dark">Gestionar Lectores</h1>
+            <p class="text-secondary mb-0">Administración de lectores y miembros activos de BiblioTech.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+                Volver al inicio
+            </a>
+            <button type="button" class="btn btn-outline-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoLector">
+                + Nuevo Lector
+            </button>
+        </div>
+    </div>
+
+    <!-- Alerta de confirmación -->
+    {% if mensaje %}
+    <div class="alert alert-{{ tipo }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ mensaje }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tarjetas de resumen (mismo diseño del Home) -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="p-3 border bg-white rounded shadow-sm">
+                <h3 class="text-success fw-bold">{{ total_activos }}</h3>
+                <p class="text-muted mb-0">Lectores Activos</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="p-3 border bg-white rounded shadow-sm">
+                <h3 class="text-primary fw-bold">{{ lectores|length }}</h3>
+                <p class="text-muted mb-0">Total Registrados</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="p-3 border bg-white rounded shadow-sm">
+                <h3 class="text-secondary fw-bold">{{ total_inactivos }}</h3>
+                <p class="text-muted mb-0">Inactivos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla principal dentro de tarjeta limpia -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Nombre Completo</th>
+                            <th>Correo Electrónico</th>
+                            <th>Teléfono / Matrícula</th>
+                            <th>Estado</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lector in lectores %}
+                        <tr>
+                            <td class="ps-4 text-muted fw-bold">#{{ lector.id }}</td>
+                            <td class="fw-semibold text-dark">{{ lector.nombre }}</td>
+                            <td class="text-secondary">{{ lector.email }}</td>
+                            <td class="text-secondary">{{ lector.telefono or '—' }}</td>
+                            <td>
+                                {% if lector.activo %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditar{{ lector.id }}">
+                                    Editar
+                                </button>
+                                <form action="{{ url_for('lectores.eliminar', id=lector.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar a {{ lector.nombre }}?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <h5 class="text-dark">No hay lectores registrados</h5>
+                                <p class="text-secondary mb-0">Haz clic en <strong>+ Nuevo Lector</strong> para registrar el primero en BiblioTech.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Lector -->
+<div class="modal fade" id="modalNuevoLector" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ url_for('lectores.crear') }}" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-dark">Registrar Nuevo Lector</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre Completo</label>
+                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Ana López" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Correo Electrónico</label>
+                    <input type="email" name="email" class="form-control" placeholder="ana@ejemplo.com" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Teléfono o Matrícula</label>
+                    <input type="text" name="telefono" class="form-control" placeholder="Ej. 22590415">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-success fw-bold">Guardar Lector</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modales Editar Lector (fuera de la tabla para evitar bloqueo de backdrop) -->
+{% for lector in lectores %}
+<div class="modal fade" id="modalEditar{{ lector.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ url_for('lectores.editar', id=lector.id) }}" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-dark">Editar Lector #{{ lector.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre Completo</label>
+                    <input type="text" name="nombre" class="form-control" value="{{ lector.nombre }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Correo Electrónico</label>
+                    <input type="email" name="email" class="form-control" value="{{ lector.email }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Teléfono o Matrícula</label>
+                    <input type="text" name="telefono" class="form-control" value="{{ lector.telefono or '' }}">
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="activo" id="activo{{ lector.id }}" {% if lector.activo %}checked{% endif %}>
+                    <label class="form-check-label fw-semibold" for="activo{{ lector.id }}">Lector Activo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
