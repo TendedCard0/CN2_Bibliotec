@@ -4,6 +4,10 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 
+from app.models.lector import Lector
+from app.models.libro import Libro
+
+
 # Cargar variables de entorno
 load_dotenv()
 
@@ -34,6 +38,9 @@ app.register_blueprint(prestamos_bp)
 # Registrar Blueprint de Lectores
 from app.routes.lectores import lectores_bp
 app.register_blueprint(lectores_bp)
+
+from app.routes.libros import libros_bp
+app.register_blueprint(libros_bp)
 
 # Importar modelos de forma independiente y crear tablas
 with app.app_context():
