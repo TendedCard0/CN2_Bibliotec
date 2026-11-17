@@ -1,62 +1,32 @@
-
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
 
-from app.models.lector import Lector
-from app.models.libro import Libro
+db = SQLAlchemy()
 
+def create_app():
+    app = Flask(__name__)
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-bibliotec")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL", "postgresql://postgres:postgres@db:5432/bibliotec"
+    )
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Cargar variables de entorno
-load_dotenv()
+    db.init_app(app)
 
-# Crear instancia de Flask
-app = Flask(__name__)
+    from app.routes.home import home_bp
+    from app.routes.lectores import lectores_bp
+    from app.routes.prestamos import prestamos_bp
+    from app.routes.libros import libros_bp
 
-# Configuración de la base de datos
-database_url = os.getenv("DATABASE_URL")
+    app.register_blueprint(home_bp)
+    app.register_blueprint(lectores_bp)
+    app.register_blueprint(prestamos_bp)
+    app.register_blueprint(libros_bp)
 
-if database_url:
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///biblioteca_local.db"
+    with app.app_context():
+        from app.models.lector import Lector
+        from app.models.libro import Libro
+        db.create_all()
 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Inicializar SQLAlchemy
-db = SQLAlchemy(app)
-
-# Registrar Blueprint del Home
-from app.routes.home import home_bp
-app.register_blueprint(home_bp)
-
-# Registrar Blueprint de Préstamos
-from app.routes.prestamos import prestamos_bp
-app.register_blueprint(prestamos_bp)
-
-# Registrar Blueprint de Lectores
-from app.routes.lectores import lectores_bp
-app.register_blueprint(lectores_bp)
-
-from app.routes.libros import libros_bp
-app.register_blueprint(libros_bp)
-
-# Importar modelos de forma independiente y crear tablas
-with app.app_context():
-    try:
-        from app.models import libro
-    except ImportError:
-        pass
-
-    try:
-        from app.models import lector
-    except ImportError:
-        pass
-
-    try:
-        from app.models import prestamo
-    except ImportError:
-        pass
-
-    db.create_all()
+    return app
