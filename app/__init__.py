@@ -1,55 +1,36 @@
-
 import os
+from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
-# Crear instancia de Flask
-app = Flask(__name__)
+db = SQLAlchemy()
 
-# Configuración de la base de datos
-database_url = os.getenv("DATABASE_URL")
 
-if database_url:
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///biblioteca_local.db"
+def create_app():
+    app = Flask(__name__)
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-bibliotec")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL", "sqlite:///biblioteca_local.db"
+    )
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
 
-# Inicializar SQLAlchemy
-db = SQLAlchemy(app)
+    from app.routes.home import home_bp
+    from app.routes.lectores import lectores_bp
+    from app.routes.prestamos import prestamos_bp
+    from app.routes.libros import libros_bp
 
-# Registrar Blueprint del Home
-from app.routes.home import home_bp
-app.register_blueprint(home_bp)
+    app.register_blueprint(home_bp)
+    app.register_blueprint(lectores_bp)
+    app.register_blueprint(prestamos_bp)
+    app.register_blueprint(libros_bp)
 
-# Registrar Blueprint de Préstamos
-from app.routes.prestamos import prestamos_bp
-app.register_blueprint(prestamos_bp)
+    with app.app_context():
+        from app.models.lector import Lector
+        from app.models.libro import Libro
+        db.create_all()
 
-# Registrar Blueprint de Lectores
-from app.routes.lectores import lectores_bp
-app.register_blueprint(lectores_bp)
-
-# Importar modelos de forma independiente y crear tablas
-with app.app_context():
-    try:
-        from app.models import libro
-    except ImportError:
-        pass
-
-    try:
-        from app.models import lector
-    except ImportError:
-        pass
-
-    try:
-        from app.models import prestamo
-    except ImportError:
-        pass
-
-    db.create_all()
+    return app
