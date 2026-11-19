@@ -1,0 +1,43 @@
+name: "Crear tag y desplegar"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a publicar (ejemplo: v1.4.2)"
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  crear-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar versión
+        run: |
+          V="${{ inputs.version }}"
+          if ! echo "$V" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "La versión debe tener el formato vX.Y.Z, por ejemplo v1.4.2"; exit 1
+          fi
+          if git rev-parse "$V" >/dev/null 2>&1; then
+            echo "El tag $V ya existe"; exit 1
+          fi
+
+      - name: Crear y subir el tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
+
+      - name: Lanzar el despliegue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docker-deploy.yml --ref "${{ inputs.version }}"
