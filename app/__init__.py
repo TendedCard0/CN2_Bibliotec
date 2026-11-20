@@ -31,6 +31,7 @@ def create_app():
     with app.app_context():
         from app.models.lector import Lector
         from app.models.libro import Libro
+        from app.models.prestamo import Prestamo
         db.create_all()
 
     return app
