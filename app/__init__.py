@@ -9,6 +9,7 @@ load_dotenv()
 
 # Crear instancia de Flask
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'bibliotech-clave-local-2026'
 
 # Configuración de la base de datos
 database_url = os.getenv("DATABASE_URL")
