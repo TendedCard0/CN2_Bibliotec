@@ -1,11 +1,12 @@
-name: "Crear tag y desplegar"
+name: "Crear tag desde PR y desplegar"
 
+# Cuando se hace merge de un pull request a dev, toma la versión vX.Y.Z del título
+# del PR (por ejemplo "v1.4.5 Cambios en lectores"), crea ese tag sobre el commit
+# del merge y lanza el workflow de despliegue (Docker Hub y Jenkins).
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Versión a publicar (ejemplo: v1.4.2)"
-        required: true
+  pull_request:
+    types: [closed]
+    branches: [dev]
 
 permissions:
   contents: write
@@ -13,31 +14,41 @@ permissions:
 
 jobs:
   crear-tag:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
-      - name: Validar versión
+      - name: Obtener versión del título del PR
+        id: ver
+        env:
+          TITULO: ${{ github.event.pull_request.title }}
         run: |
-          V="${{ inputs.version }}"
-          if ! echo "$V" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "La versión debe tener el formato vX.Y.Z, por ejemplo v1.4.2"; exit 1
+          V=$(echo "$TITULO" | grep -Eio '\bv[0-9]+\.[0-9]+\.[0-9]+\b' | head -1 | tr 'V' 'v' || true)
+          if [ -z "$V" ]; then
+            echo "El título del PR no trae una versión vX.Y.Z. No se crea tag ni se despliega."
+            echo "version=" >> "$GITHUB_OUTPUT"; exit 0
           fi
           if git rev-parse "$V" >/dev/null 2>&1; then
-            echo "El tag $V ya existe"; exit 1
+            echo "El tag $V ya existe. Usa una versión nueva en el título."; exit 1
           fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Versión detectada: $V"
 
       - name: Crear y subir el tag
+        if: steps.ver.outputs.version != ''
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
-          git push origin "${{ inputs.version }}"
+          git tag -a "${{ steps.ver.outputs.version }}" -m "${{ github.event.pull_request.title }}"
+          git push origin "${{ steps.ver.outputs.version }}"
 
       - name: Lanzar el despliegue
+        if: steps.ver.outputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run docker-deploy.yml --ref "${{ inputs.version }}"
+        run: gh workflow run docker-deploy.yml --ref "${{ steps.ver.outputs.version }}"
