@@ -1,28 +1,268 @@
-
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
+<div class="container pb-5">
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="fw-bold text-dark">Gestionar Préstamos</h1>
-            <p class="text-secondary">Administración de préstamos de libros de BiblioTech.</p>
+            <h1 class="fw-bold text-dark">Gestión de Préstamos</h1>
+            <p class="text-secondary mb-0">
+                Administración y seguimiento de préstamos de BiblioTec.
+            </p>
         </div>
         <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
             Volver al inicio
         </a>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body text-center py-5">
-            <h4 class="text-dark">Módulo de Préstamos</h4>
-            <p class="text-secondary mb-0">
-                Aquí podrás registrar, consultar, editar y eliminar préstamos.
-            </p>
-            <p class="text-muted mt-2 mb-0">
-                La funcionalidad de gestión se integrará en los siguientes pasos.
-            </p>
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="alert alert-{{ categoria }} alert-dismissible fade show" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-secondary mb-1">Total de préstamos</p>
+                    <h3 class="fw-bold mb-0">{{ prestamos|length }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-secondary mb-1">Préstamos activos</p>
+                    <h3 class="fw-bold text-primary mb-0">
+                        {{ prestamos|selectattr("estado", "equalto", "Prestado")|list|length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-secondary mb-1">Préstamos devueltos</p>
+                    <h3 class="fw-bold text-success mb-0">
+                        {{ prestamos|selectattr("estado", "equalto", "Devuelto")|list|length }}
+                    </h3>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="mb-0 fw-bold">Registrar nuevo préstamo</h5>
+        </div>
+
+        <div class="card-body p-4">
+            <form action="{{ url_for('prestamos.registrar') }}" method="POST">
+                <div class="row g-3">
+
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Libro</label>
+                        <select name="libro_id" class="form-select" required>
+                            <option value="">Selecciona un libro</option>
+                            {% for libro in libros_disponibles %}
+                                <option value="{{ libro.id }}">
+                                    {{ libro.titulo }} — {{ libro.disponibles }} disponibles
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not libros_disponibles %}
+                            <small class="text-danger">No hay libros disponibles para préstamo.</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Lector</label>
+                        <select name="lector_id" class="form-select" required>
+                            <option value="">Selecciona un lector</option>
+                            {% for lector in lectores_activos %}
+                                <option value="{{ lector.id }}">
+                                    {{ lector.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not lectores_activos %}
+                            <small class="text-danger">No hay lectores activos registrados.</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Fecha del préstamo</label>
+                        <input type="date" name="fecha_prestamo" class="form-control"
+                               value="{{ request.form.get('fecha_prestamo', '') }}"
+                               required>
+                    </div>
+
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary px-4"
+                                {% if not libros_disponibles or not lectores_activos %}disabled{% endif %}>
+                            Registrar préstamo
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">Listado de préstamos</h5>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Libro</th>
+                            <th>Lector</th>
+                            <th>Fecha de préstamo</th>
+                            <th>Fecha de devolución</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for prestamo in prestamos %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">{{ prestamo.id }}</td>
+                            <td>{{ prestamo.libro.titulo }}</td>
+                            <td>{{ prestamo.lector.nombre }}</td>
+                            <td>{{ prestamo.fecha_prestamo.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if prestamo.fecha_devolucion %}
+                                    {{ prestamo.fecha_devolucion.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span class="text-muted">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prestamo.estado == "Prestado" %}
+                                    <span class="badge bg-primary">Prestado</span>
+                                {% else %}
+                                    <span class="badge bg-success">Devuelto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#editar{{ prestamo.id }}">
+                                    Editar
+                                </button>
+
+                                <form action="{{ url_for('prestamos.eliminar', id=prestamo.id) }}"
+                                      method="POST" class="d-inline"
+                                      onsubmit="return confirm('¿Deseas eliminar este préstamo?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+
+                        <tr class="collapse" id="editar{{ prestamo.id }}">
+                            <td colspan="7" class="bg-light p-4">
+                                <h6 class="fw-bold mb-3">Editar préstamo #{{ prestamo.id }}</h6>
+
+                                <form action="{{ url_for('prestamos.editar', id=prestamo.id) }}"
+                                      method="POST">
+                                    <div class="row g-3">
+
+                                        <div class="col-md-3">
+                                            <label class="form-label">Libro</label>
+                                            <select name="libro_id" class="form-select" required>
+                                                {% for libro in libros %}
+                                                    <option value="{{ libro.id }}"
+                                                        {% if libro.id == prestamo.libro_id %}selected{% endif %}>
+                                                        {{ libro.titulo }} ({{ libro.disponibles }} disponibles)
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <label class="form-label">Lector</label>
+                                            <select name="lector_id" class="form-select" required>
+                                                {% for lector in lectores %}
+                                                    <option value="{{ lector.id }}"
+                                                        {% if lector.id == prestamo.lector_id %}selected{% endif %}>
+                                                        {{ lector.nombre }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label class="form-label">Fecha del préstamo</label>
+                                            <input type="date" name="fecha_prestamo"
+                                                   class="form-control"
+                                                   value="{{ prestamo.fecha_prestamo.isoformat() }}"
+                                                   required>
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label class="form-label">Fecha de devolución</label>
+                                            <input type="date" name="fecha_devolucion"
+                                                   class="form-control"
+                                                   value="{{ prestamo.fecha_devolucion.isoformat() if prestamo.fecha_devolucion else '' }}">
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label class="form-label">Estado</label>
+                                            <select name="estado" class="form-select" required>
+                                                <option value="Prestado"
+                                                    {% if prestamo.estado == "Prestado" %}selected{% endif %}>
+                                                    Prestado
+                                                </option>
+                                                <option value="Devuelto"
+                                                    {% if prestamo.estado == "Devuelto" %}selected{% endif %}>
+                                                    Devuelto
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 text-end">
+                                            <button type="submit" class="btn btn-primary">
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <h6 class="text-secondary">No hay préstamos registrados.</h6>
+                                <p class="text-muted mb-0">
+                                    Utiliza el formulario para registrar el primer préstamo.
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
